@@ -1,0 +1,27 @@
+version: "3.7"
+services:
+  redis:
+    image: redis:5.0.5
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    container_name: redis-server
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      - redis-java-network
+
+  redis-java:
+    build:
+      context: .
+      dockerfile: Dockerfile-test
+    image: redis-java-test:snapshot
+    volumes:
+      - ./repo:/maven/repo
+    depends_on:
+      - redis
+    entrypoint: ["/workdir/redis-java/wait-for-it.sh"]
+    command: ["-t", "3", "redis:63791", "--", "/usr/local/bin/mvn-entrypoint.sh", "mvn", "-s", "/workdir/redis-java/maven-settings.xml", "test"]
+    networks:
+      - redis-java-network
+
+networks:
+  redis-java-network:

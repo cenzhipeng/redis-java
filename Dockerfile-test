@@ -1,0 +1,14 @@
+FROM maven:3.6.1-jdk-8
+LABEL maintainer="cenzhipeng@aliyun.com"
+LABEL mainPurpose="test the redis-java server"
+WORKDIR /workdir/redis-java
+EXPOSE 6379
+
+COPY pom.xml  .
+COPY maven-settings.xml .
+RUN mvn -s ./maven-settings.xml dependency:resolve
+
+COPY src/ ./src/
+COPY wait-for-it.sh .
+RUN chmod a+x /workdir/redis-java/wait-for-it.sh
+CMD ["mvn", "-s", "/workdir/redis-java/maven-settings.xml", "-o", "test"]
