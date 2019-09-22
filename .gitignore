@@ -30,3 +30,6 @@ hs_err_pid*
 
 # the maven repo for docker container
 repo/
+
+# the maven target
+target/
