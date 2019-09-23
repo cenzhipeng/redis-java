@@ -107,22 +107,25 @@ public class RedisServer {
         private int databaseNum = 16;
         private String password;
 
-        public void withPort(int port) {
+        public RedisServerBuilder port(int port) {
             if (port < 1 || port > 65535) {
                 throw new IllegalArgumentException("bind port should be in 1 to 65535");
             }
             this.port = port;
+            return this;
         }
 
-        public void withDatabaseNum(int databaseNum) {
+        public RedisServerBuilder databaseNum(int databaseNum) {
             if (databaseNum < 1 || databaseNum > MAX_DATABASE_NUM) {
                 throw new IllegalArgumentException("database num should be in 1 to " + MAX_DATABASE_NUM);
             }
             this.databaseNum = databaseNum;
+            return this;
         }
 
-        public void withPassword(String password) {
+        public RedisServerBuilder password(String password) {
             this.password = password;
+            return this;
         }
 
         public RedisServer build() {
