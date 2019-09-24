@@ -33,3 +33,6 @@ repo/
 
 # the maven target
 target/
+
+# vagrant
+.vagrant
