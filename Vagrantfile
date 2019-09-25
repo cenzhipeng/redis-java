@@ -8,7 +8,7 @@ Vagrant.configure("2") do |config|
     node.vm.box_version = "201907.24.0"
     node.vm.hostname = "docker"
     node.vm.provider "virtualbox" do |v|
-      v.memory = 4096
+      v.memory = 2048
       v.cpus = 2
     end
     node.vm.provision "shell", path: "vagrant-install.sh", privileged: false
