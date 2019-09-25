@@ -22,6 +22,7 @@ services:
     command: ["-t", "3", "redis:63791", "--", "/usr/local/bin/mvn-entrypoint.sh", "mvn", "-s", "/workdir/redis-java/maven-settings.xml", "test"]
     networks:
       - redis-java-network
+    tty: true
 
 networks:
   redis-java-network:
