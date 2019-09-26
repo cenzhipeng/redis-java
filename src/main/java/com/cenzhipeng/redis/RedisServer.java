@@ -1,16 +1,17 @@
 package com.cenzhipeng.redis;
 
-import com.cenzhipeng.redis.channel.HelloServerHandler;
+import com.cenzhipeng.redis.data.Attributes;
+import com.cenzhipeng.redis.data.DataProvider;
+import com.cenzhipeng.redis.handler.RequestStatefulHandler;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.LineBasedFrameDecoder;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 
 @Slf4j
@@ -21,6 +22,8 @@ public class RedisServer {
     private int port;
     private int databaseNum;
     private String password;
+    private ChannelHandler[] handlers;
+    private volatile DataProvider dataProvider = new DataProvider();
 
 
     public int port() {
@@ -35,44 +38,62 @@ public class RedisServer {
 
     }
 
+    /**
+     * for test
+     *
+     * @param handlers
+     */
+    RedisServer handlers(ChannelHandler... handlers) {
+        this.handlers = handlers;
+        return this;
+    }
+
     public void start() throws InterruptedException {
         final NioEventLoopGroup bossGroup = new NioEventLoopGroup();
         final NioEventLoopGroup workerGroup = new NioEventLoopGroup();
         final CountDownLatch countDownLatch = new CountDownLatch(1);
-        new Thread() {
-            @Override
-            public void run() {
-                try {
-                    ServerBootstrap serverBootstrap = new ServerBootstrap();
-                    serverBootstrap.group(bossGroup, workerGroup)
-                            .channel(NioServerSocketChannel.class)
-                            .childOption(ChannelOption.SO_KEEPALIVE, true)
-                            .childOption(ChannelOption.TCP_NODELAY, true)
-                            .childHandler(new ChannelInitializer<NioSocketChannel>() {
-                                protected void initChannel(NioSocketChannel ch) {
-                                    // todo; should insert  serviceHandlers here
-                                    ch.pipeline().addLast(new HelloServerHandler());
+        new Thread(() -> {
+            try {
+                ServerBootstrap serverBootstrap = new ServerBootstrap();
+                serverBootstrap.group(bossGroup, workerGroup)
+                        .channel(NioServerSocketChannel.class)
+                        .childOption(ChannelOption.SO_KEEPALIVE, true)
+                        .childOption(ChannelOption.TCP_NODELAY, true)
+                        .childHandler(new ChannelInitializer<NioSocketChannel>() {
+                            protected void initChannel(NioSocketChannel ch) {
+                                // todo; should insert  serviceHandlers here
+//                                ch.pipeline().addLast(new TestServerHandler());
+                                ch.attr(Attributes.DATA).set(dataProvider);
+                                if (handlers != null) {
+                                    Arrays.stream(handlers).forEach(handler -> {
+                                        ch.pipeline().addLast(handler);
+                                    });
+                                } else {
+                                    ch.pipeline()
+                                            .addLast(new LineBasedFrameDecoder(Integer.MAX_VALUE))
+                                            .addLast(new RequestStatefulHandler());
+
                                 }
-                            });
-                    ChannelFuture f = bind(serverBootstrap, port);
-                    channel = f.channel();
-                    log.info("redis server started in port: [{}] database num: [{}]", port, databaseNum);
-                    countDownLatch.countDown();
-                    channel.closeFuture().sync();
+                            }
+                        });
+                ChannelFuture f = bind(serverBootstrap, port);
+                channel = f.channel();
+                log.info("redis server started in port: [{}] database num: [{}]", port, databaseNum);
+                countDownLatch.countDown();
+                channel.closeFuture().sync();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                // make sure it countDown to 0
+                countDownLatch.countDown();
+                try {
+                    bossGroup.shutdownGracefully().sync();
+                    workerGroup.shutdownGracefully().sync();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
-                } finally {
-                    // make sure it countDown to 0
-                    countDownLatch.countDown();
-                    try {
-                        bossGroup.shutdownGracefully().sync();
-                        workerGroup.shutdownGracefully().sync();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
                 }
             }
-        }.start();
+        }).start();
         // wait to confirm the server started or it has closed
         countDownLatch.await();
     }
@@ -92,7 +113,7 @@ public class RedisServer {
 
     public void shutDown() throws InterruptedException {
         if (channel == null) {
-            log.warn("invoke server shutdown but server has not started, please check your code");
+            log.warn("invoke server shutdown but server has not started, please isValid your code");
             return;
         }
         channel.close().sync();
