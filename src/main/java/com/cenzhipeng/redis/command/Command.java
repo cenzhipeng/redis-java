@@ -9,31 +9,36 @@ public interface Command {
 
     static Command valueOf(String commandName) throws NoSuchCommandException {
         //todo
-        switch (commandName) {
+        switch (commandName.toUpperCase()) {
             case SetCommand.NAME:
                 return new SetCommand();
+            case GetCommand.NAME:
+                return new GetCommand();
         }
         throw new NoSuchCommandException("no such command", commandName);
     }
 
     /**
      * execute the command
+     *
      * @return
      */
     Response execute();
 
     /**
      * set the next arg of this command
+     *
      * @param arg the next arg
-     * @throws CommandArgException when the arg doesn't match the command
      */
-    void withArg(String arg) throws CommandArgException;
+    void withArg(String arg);
 
     /**
-     * is the command valid
-     * @return true when valid
+     * build the command
+     * we should always build the command before we execute it
+     *
+     * @throws CommandArgException when command is not valid
      */
-    boolean isValid();
+    void build() throws CommandArgException;
 
     void dataProvider(DataProvider dataProvider);
 }

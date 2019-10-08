@@ -1,14 +1,16 @@
 package com.cenzhipeng.redis;
 
+import com.cenzhipeng.redis.command.GetCommand;
 import com.cenzhipeng.redis.data.Attributes;
 import com.cenzhipeng.redis.data.DataProvider;
-import com.cenzhipeng.redis.handler.RequestStatefulHandler;
+import com.cenzhipeng.redis.handler.CommandHandler;
+import com.cenzhipeng.redis.handler.RequestDecodeHandler;
+import com.cenzhipeng.redis.handler.ResponseEncodeHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.LineBasedFrameDecoder;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Arrays;
@@ -70,8 +72,9 @@ public class RedisServer {
                                     });
                                 } else {
                                     ch.pipeline()
-                                            .addLast(new LineBasedFrameDecoder(Integer.MAX_VALUE))
-                                            .addLast(new RequestStatefulHandler());
+                                            .addLast(new RequestDecodeHandler())
+                                            .addLast(new CommandHandler())
+                                            .addLast(new ResponseEncodeHandler());
 
                                 }
                             }
