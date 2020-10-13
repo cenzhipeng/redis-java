@@ -25,7 +25,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <logback.version>1.2.3</logback.version>
         <lettuce.version>5.1.8.RELEASE</lettuce.version>
-        <junit.version>4.12</junit.version>
+        <junit.version>4.13.1</junit.version>
         <guava.version>28.1-jre</guava.version>
         <lombok.version>1.18.10</lombok.version>
         <assertj.version>3.13.2</assertj.version>
